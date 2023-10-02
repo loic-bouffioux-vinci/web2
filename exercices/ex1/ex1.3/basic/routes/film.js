@@ -1,33 +1,90 @@
-var express = require('express');
-var router = express.Router();
+#!/usr/bin/env node
 
-const films = [
-  {
-    id: 1,
-    title: 'Star Wars: The Phantom Menace (Episode I)',
-    duration: 136,
-    budget: '115',
-    link: 'https://en.wikipedia.org/wiki/Star_Wars:_Episode_I_–_The_Phantom_Menace',
-  },
-  {
-    id: 2,
-    title: 'Star Wars: Episode II – Attack of the Clones',
-    duration: 142,
-    budget: 115,
-    link: 'https://en.wikipedia.org/wiki/Star_Wars:_Episode_II_–_Attack_of_the_Clones',
-  },
-  {
-    id: 3,
-    title: "Zack Snyder's Justice League",
-    duration: 242,
-    budget: 70,
-    link: 'https://en.wikipedia.org/wiki/Zack_Snyders_Justice_League',
-  },    
-];
+/**
+ * Module dependencies.
+ */
 
-// Read all the films
-router.get('/', function (req, res) {
-  return res.json(films);
-});
+var app = require('../app');
+var debug = require('debug')('4.1:server');
+var http = require('http');
 
-module.exports = router;
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}

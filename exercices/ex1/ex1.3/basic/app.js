@@ -1,40 +1,82 @@
 var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+var router = express.Router();
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var filmRouter = require('./routes/film');
+const films = [
+  {
+    id: 1,
+    title: 'Star Wars: The Phantom Menace (Episode I)',
+    duration: 136,
+    budget: '115',
+    link: 'https://en.wikipedia.org/wiki/Star_Wars:_Episode_I_%E2%80%93_The_Phantom_Menace',
+  },
+  {
+    id: 2,
+    title: 'Star Wars: Episode II – Attack of the Clones',
+    duration: 142,
+    budget: 115,
+    link: 'https://en.wikipedia.org/wiki/Star_Wars:_Episode_II_%E2%80%93_Attack_of_the_Clones',
+  },
+  {
+    id: 3,
+    title: "Zack Snyder's Justice League",
+    duration: 242,
+    budget: 70,
+    link: 'https://en.wikipedia.org/wiki/Zack_Snyder%27s_Justice_League',
+  },
+];
 
+// Read all the films, filtered by minimum-duration
+router.get('/', (req, res) => {
+  const minimumFilmDuration = req?.query?.['minimum-duration']
+    ? Number(req.query['minimum-duration'])
+    : undefined;
 
-var app = express();
+  if (minimumFilmDuration === undefined) return res.json(films);
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+  if (typeof minimumFilmDuration !== 'number' || minimumFilmDuration <= 0)
+    return res.json('Wrong minimum duration');
 
-const stats = {};
-
-app.use((req, res, next) => {
-  const currentOperation = `${req.method} ${req.path}`;
-  const currentOperationCounter = stats[currentOperation];
-  if (currentOperationCounter === undefined) stats[currentOperation] = 0;
-  stats[currentOperation] += 1;
-  const statsMessage = `Request counter : \n${Object.keys(stats)
-    .map((operation) => `- ${operation} : ${stats[operation]}`)
-    .join('\n')}
-      `;
-  console.log(statsMessage);
-  next();
+  const filmsReachingMinimumDuration = films.filter(
+    (film) => film.duration >= minimumFilmDuration
+  );
+  return res.json(filmsReachingMinimumDuration);
 });
 
+// Read a film from its id in the menu
+router.get('/:id', (req, res) => {
+  const indexOfFilmFound = films.findIndex((film) => film.id == req.params.id);
 
-app.use(express.static(path.join(__dirname, 'public')));
+  if (indexOfFilmFound < 0) return res.json('Resource not found'); 
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/film', filmRouter);
+  return res.json(films[indexOfFilmFound]);
+});
 
-module.exports = app;
+// Create a film
+router.post('/', (req, res) => {
+  const title =
+    req?.body?.title?.trim()?.length !== 0 ? req.body.title : undefined;
+  const link =
+    req?.body?.content?.trim().length !== 0 ? req.body.link : undefined;
+  const duration =
+    typeof req?.body?.duration !== 'number' || req.body.duration < 0
+      ? undefined
+      : req.body.duration;
+  const budget =
+    typeof req?.body?.budget !== 'number' || req.body.budget < 0
+      ? undefined
+      : req.body.budget;
+
+  if (!title || !link || !duration || !budget) return res.json('Bad request'); 
+
+  const lastItemIndex = films?.length !== 0 ? films.length - 1 : undefined;
+  const lastId = lastItemIndex !== undefined ? films[lastItemIndex]?.id : 0;
+  const nextId = lastId + 1;
+
+  const newFilm = { id: nextId, title, link, duration, budget };
+
+  films.push(newFilm);
+
+  return res.json(newFilm);
+});
+
+module.exports = router;
